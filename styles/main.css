@@ -1,0 +1,28 @@
+.weekend {
+    color: #F00 !important;
+}
+
+.diff-month{
+    color: #AAA;
+}
+.days{
+    font-weight: bold;
+}
+.current-month{
+    color:#000;
+}
+
+td {
+    padding:10px;
+    border: solid black;
+    text-align: center;
+}
+table{
+    border-collapse: collapse;
+}
+
+.today{
+    color:#FFF;
+    background-color:#F00;
+    border-radius: 50%;
+}
