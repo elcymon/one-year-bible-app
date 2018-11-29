@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'dart:async';
 import 'dart:math';                                                                                                                                                                                                                        import 'package:flutter/material.dart';
 
 void main() => runApp(MyApp());
@@ -45,97 +47,95 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
-
-  void _incrementCounter() {
+  Map<int,String> _index2Day = new Map.fromIterables([0,1,2,3,4,5,6], ['Sun','Mon','Tue','Wed','Thur','Fri','Sat']);
+  DateTime _chosenDate = new DateTime.now();
+  DateTime _chosenReading = new DateTime.now();
+  //print(_chosenDate.toString());
+  Future _selectDate() async {
+    DateTime picked = await showDatePicker(context: context,
+                                initialDate: new DateTime.now(),
+                                firstDate: new DateTime(2018),
+                                lastDate: new DateTime(2050)
+                      );
+    if(picked != null) {
+      setState(() {
+        _chosenDate = picked;
+        _chosenReading = picked;
+      });
+    }
+  }
+  void _viewThisDay(DateTime thisDay) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _chosenReading = thisDay;
     });
   }
-
-  Map<int,String> _index2Day = new Map.fromIterables([0,1,2,3,4,5,6], ['Sun','Mon','Tue','Wed','Thur','Fri','Sat']);
-  var chosenDate = new DateTime.now();
-  
   Center _calenderView(int index) {
-    int firstMonthWeekDay = chosenDate.weekday;
-    DateTime currentDate;
-    if(index > 6) {
-      int daysValue = index - 7  - firstMonthWeekDay;
-      if(daysValue < 0)
-        currentDate = chosenDate.subtract(new Duration(days: daysValue.abs()));
-      else
-        currentDate = chosenDate.add(new Duration(days: daysValue.abs()));
-    }
-    Widget childWidget = (index <= 6) ? Text(_index2Day[index],style: Theme.of(context).textTheme.headline,): new FlatButton(onPressed: null, child: Text("${currentDate.day}"));
+    //function that takes index as input and generates a view of the calender for the reading plan
 
-    return Center(
-      child: childWidget/*Text(
-        'Item $index',
-        style: Theme.of(context).textTheme.headline,
-      )*/,
-    );
+
+    Widget childWidget;
+    if(index <= 6){
+      childWidget = Text(_index2Day[index],
+          style:TextStyle(fontWeight: FontWeight.bold,fontSize: 20),);
+    }
+    else {
+      //handle the display of the dates.
+      DateTime monthChosenStart = DateTime(_chosenDate.year,_chosenDate.month,1);
+
+      int firstMonthWeekDay = monthChosenStart.weekday;
+      DateTime currentDate;
+      int daysValue = index - 7 - firstMonthWeekDay;
+      if(daysValue < 0)
+        currentDate = monthChosenStart.subtract(new Duration(days: daysValue.abs()));
+      else
+        currentDate = monthChosenStart.add(new Duration(days: daysValue.abs()));
+      childWidget = new FlatButton(onPressed: () => _viewThisDay(currentDate),
+              child: Text("${currentDate.day}"));
+    }
+
+    return Center(child: childWidget,);
+
   }
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: Text('Bible Reading Plan'),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            new Expanded(child: GridView.count(
-              // Create a grid with 7 columns. If you change the scrollDirection to
-              // horizontal, this would produce 7 rows.
-              crossAxisCount: 7,
-              // Generate 42 Widgets that display their index in the List
-              children: List.generate(42, (index) {return _calenderView(index);
-              }),
-            )),
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.display1,
-            ),
-          ],
+      body: Container(
+        padding: EdgeInsets.all(32.0),
+        child:  Center(
+          // Center is a layout widget. It takes a single child and positions it
+          // in the middle of the parent.
+          child: Column(
+            children: <Widget>[
+              new FlatButton(onPressed: _selectDate,
+                child: new Text("${_chosenDate.year}-${_chosenDate.month}",
+                style: TextStyle(fontSize: 25),),),
+              new Expanded(child: GridView.count(
+                // Create a grid with 7 columns. If you change the scrollDirection to
+                // horizontal, this would produce 7 rows.
+                crossAxisCount: 7,
+                // Generate 42 Widgets that display their index in the List
+                children: List.generate(42, (index) {return _calenderView(index);
+                }),
+              )),
+              Container(
+                padding: EdgeInsets.only(bottom:32.0),
+                child: Column(
+                  children: <Widget>[
+                    new Text("${_chosenReading.year}-${_chosenReading.month}-${_chosenReading.day}")
+                  ],
+                )
+                )
+            ],
+          ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+
+      )
     );
   }
+
 }
