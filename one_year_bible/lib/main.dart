@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'dart:math';                                                                                                                                                                                                                        import 'package:flutter/material.dart';
-
+import 'dart:math';
+import 'dart:io';
+import 'dart:convert';
+//
+import 'package:flutter/services.dart' show rootBundle;
+Future<String> loadAsset() async {
+  return await rootBundle.loadString('assets/eedw2.json');
+}
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
@@ -48,24 +54,51 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
   Map<int,String> _index2Day = new Map.fromIterables([0,1,2,3,4,5,6], ['Sun','Mon','Tue','Wed','Thur','Fri','Sat']);
-  DateTime _chosenDate = new DateTime.now();
-  DateTime _chosenReading = new DateTime.now();
+  Map<int,String> _index2Month = new Map.fromIterables([1,2,3,4,5,6,7,8,9,10,11,12],
+                                                    ['January','February','March',
+                                                    'April','May','June','July',
+                                                    'August','September','October',
+                                                    'November','December']);
+  DateTime _chosenDate = new DateTime(DateTime.now().year,DateTime.now().month,DateTime.now().day);
+  DateTime _chosenReading = new DateTime(DateTime.now().year,DateTime.now().month,DateTime.now().day);
+  String _chosenReadinString = '';
+
   //print(_chosenDate.toString());
-  Future _selectDate() async {
+  Map _plan = new Map();
+
+  void _uploadPlan() async {
+    String jsonString = await loadAsset();
+//    print(jsonString);
+//    File f = new File(jsonString);
+//    jsonString = f.readAsStringSync();
+    setState(() {
+      _plan = json.decode(jsonString);
+    });
+
+    _viewThisDay(_chosenDate);
+  }
+  Future<void> _selectDate() async {//pick date to view in calender
     DateTime picked = await showDatePicker(context: context,
                                 initialDate: new DateTime.now(),
                                 firstDate: new DateTime(2018),
                                 lastDate: new DateTime(2050)
                       );
     if(picked != null) {
+
       setState(() {
         _chosenDate = picked;
-        _chosenReading = picked;
+//        _chosenReading = picked;
       });
+      _viewThisDay(_chosenDate);
     }
   }
-  void _viewThisDay(DateTime thisDay) {
+
+  void _viewThisDay(DateTime thisDay) {//select current date to view it's reading
+    int dayIndex = thisDay.difference(new DateTime(thisDay.year,1,1)).inDays;
+    List readingList = List.from(_plan["${dayIndex}"]);
+
     setState(() {
+      _chosenReadinString = readingList.join("\n");
       _chosenReading = thisDay;
     });
   }
@@ -89,7 +122,7 @@ class _MyHomePageState extends State<MyHomePage> {
         currentDate = monthChosenStart.subtract(new Duration(days: daysValue.abs()));
       else
         currentDate = monthChosenStart.add(new Duration(days: daysValue.abs()));
-      childWidget = new FlatButton(onPressed: () => _viewThisDay(currentDate),
+      childWidget = new FlatButton(onPressed: () => _viewThisDay(currentDate),color: currentDate.compareTo(_chosenReading) == 0 ? Colors.red : Colors.white,
               child: Text("${currentDate.day}"));
     }
 
@@ -102,18 +135,18 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
-        title: Text('Bible Reading Plan'),
+        title:
+        new FlatButton(onPressed: _selectDate,padding: EdgeInsets.all(0),
+          child: new Text("${_index2Month[_chosenDate.month]}, ${_chosenDate.year}",
+            style: TextStyle(fontSize: 25),),),
       ),
       body: Container(
-        padding: EdgeInsets.all(32.0),
+        //padding: EdgeInsets.all(32.0),
         child:  Center(
           // Center is a layout widget. It takes a single child and positions it
           // in the middle of the parent.
           child: Column(
             children: <Widget>[
-              new FlatButton(onPressed: _selectDate,
-                child: new Text("${_chosenDate.year}-${_chosenDate.month}",
-                style: TextStyle(fontSize: 25),),),
               new Expanded(child: GridView.count(
                 // Create a grid with 7 columns. If you change the scrollDirection to
                 // horizontal, this would produce 7 rows.
@@ -122,14 +155,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 children: List.generate(42, (index) {return _calenderView(index);
                 }),
               )),
-              Container(
-                padding: EdgeInsets.only(bottom:32.0),
-                child: Column(
-                  children: <Widget>[
-                    new Text("${_chosenReading.year}-${_chosenReading.month}-${_chosenReading.day}")
-                  ],
-                )
-                )
+              new Expanded(child: new Text(_chosenReadinString,)),
             ],
           ),
         ),
@@ -137,5 +163,15 @@ class _MyHomePageState extends State<MyHomePage> {
       )
     );
   }
+
+  @override
+  void initState() {
+    _uploadPlan();
+//    print(Directory.current.path);
+//    File f = new File('assets/eedw2.json');
+//    String jsonString = f.readAsStringSync();
+//    var jsonMap = json.decode(jsonString);
+  }
+
 
 }
